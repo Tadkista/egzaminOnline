@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Administracyjny - System Egzaminacyjny</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="admin-style.css">
+</head>
+
+<body>
+    <div class="admin-container">
+        <!-- Ekran logowania -->
+        <div class="login-screen active">
+            <div class="login-box">
+                <h1>Panel Administracyjny</h1>
+                <p>Zaloguj się, aby zarządzać testami</p>
+                
+                <div class="form-group">
+                    <label for="adminUsername">Nazwa użytkownika:</label>
+                    <input type="text" id="adminUsername" value="admin" placeholder="admin">
+                </div>
+                
+                <div class="form-group">
+                    <label for="adminPassword">Hasło:</label>
+                    <input type="password" id="adminPassword" value="admin123" placeholder="••••••">
+                </div>
+                
+                <button class="btn" id="loginBtn">Zaloguj się</button>
+            </div>
+        </div>
+
+        <!-- Panel główny -->
+        <div class="admin-panel">
+            <div class="admin-header">
+                <h1>Panel Administracyjny</h1>
+                <div class="admin-info">
+                    <span id="adminName"></span>
+                    <button class="btn btn-secondary" id="logoutBtn">Wyloguj</button>
+                </div>
+            </div>
+
+            <div class="admin-nav">
+                <button class="nav-btn active" data-view="tests">Testy</button>
+                <button class="nav-btn" data-view="sessions">Sesje egzaminacyjne</button>
+            </div>
+
+            <!-- Panel testów -->
+            <div class="admin-view" id="testsView">
+                <div class="view-header">
+                    <h2>Zarządzanie testami</h2>
+                    <button class="btn" id="addTestBtn">+ Dodaj nowy test</button>
+                </div>
+
+                <div class="tests-list" id="testsList"></div>
+            </div>
+
+            <!-- Panel sesji -->
+            <div class="admin-view" id="sessionsView" style="display: none;">
+                <div class="view-header">
+                    <h2>Sesje egzaminacyjne</h2>
+                    <div class="filters">
+                        <input type="text" id="sessionSearch" placeholder="Szukaj po nazwisku lub emailu...">
+                        <select id="sessionTestFilter">
+                            <option value="">Wszystkie testy</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="sessions-table" id="sessionsTable"></div>
+            </div>
+        </div>
+
+        <!-- Modal edycji testu -->
+        <div class="modal" id="testModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modalTitle">Dodaj nowy test</h2>
+                    <button class="close-btn" onclick="closeTestModal()">×</button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="testTitle">Tytuł testu:</label>
+                        <input type="text" id="testTitle" placeholder="np. Testowanie Oprogramowania - Advanced">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="testDescription">Opis:</label>
+                        <textarea id="testDescription" rows="3" placeholder="Krótki opis testu..."></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="testDuration">Czas trwania (minuty):</label>
+                            <input type="number" id="testDuration" value="30" min="1">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="testPassingScore">Próg zaliczenia (%):</label>
+                            <input type="number" id="testPassingScore" value="60" min="0" max="100">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="testActive">Status:</label>
+                            <select id="testActive">
+                                <option value="1">Aktywny</option>
+                                <option value="0">Nieaktywny</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="questions-section">
+                        <h3>Pytania</h3>
+                        <div id="questionsList"></div>
+                        <button class="btn btn-secondary" id="addQuestionBtn">+ Dodaj pytanie</button>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeTestModal()">Anuluj</button>
+                    <button class="btn" id="saveTestBtn">Zapisz test</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal pytania -->
+        <div class="modal" id="questionModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="questionModalTitle">Dodaj pytanie</h2>
+                    <button class="close-btn" onclick="closeQuestionModal()">×</button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="questionText">Treść pytania:</label>
+                        <textarea id="questionText" rows="3" placeholder="Wpisz treść pytania..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="questionOrder">Pozycja pytania:</label>
+                        <input type="number" id="questionOrder" value="1" min="1">
+                    </div>
+
+                    <div class="answers-section">
+                        <h3>Odpowiedzi</h3>
+                        <div id="answersList"></div>
+                        <button class="btn btn-secondary" id="addAnswerBtn">+ Dodaj odpowiedź</button>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeQuestionModal()">Anuluj</button>
+                    <button class="btn" id="saveQuestionBtn">Zapisz pytanie</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal odpowiedzi -->
+        <div class="modal" id="answerModal">
+            <div class="modal-content modal-content-small">
+                <div class="modal-header">
+                    <h2 id="answerModalTitle">Dodaj odpowiedź</h2>
+                    <button class="close-btn" onclick="closeAnswerModal()">×</button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="answerText">Treść odpowiedzi:</label>
+                        <textarea id="answerText" rows="3" placeholder="Wpisz treść odpowiedzi..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="answerIsCorrect">
+                            <span>To jest poprawna odpowiedź</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeAnswerModal()">Anuluj</button>
+                    <button class="btn" id="saveAnswerBtn">Zapisz odpowiedź</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="admin-script.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Egzamin Online - Testowanie Oprogramowania</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Egzamin Online</h1>
+            <p>Advanced</p>
+        </div>
+
+        <div class="exam-info">
+            <div class="exam-info-grid">
+                <div class="info-item">
+                    <strong>Liczba pytań</strong>
+                    <span id="totalQuestions">Ładowanie...</span>
+                </div>
+                <div class="info-item">
+                    <strong>Czas trwania</strong>
+                    <span id="examDuration">Ładowanie...</span>
+                </div>
+                <div class="info-item">
+                    <strong>Próg zaliczenia</strong>
+                    <span id="passingThreshold">Ładowanie...</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="start-screen active">
+                <div class="student-form">
+                    <h2>Dane uczestnika</h2>
+                    <div class="form-group">
+                        <label for="studentName">Imię i nazwisko:</label>
+                        <input type="text" id="studentName" placeholder="Wpisz swoje imię i nazwisko" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="studentEmail">Email:</label>
+                        <input type="email" id="studentEmail" placeholder="twoj@email.com" required>
+                    </div>
+                    <button class="btn" id="startExamBtn">Rozpocznij egzamin</button>
+                    <button class="btn btn-secondary" id="showHistoryBtnStart" style="margin-top: 12px;">Obejrzyj
+                        poprzednie egzaminy</button>
+                </div>
+            </div>
+
+            <div class="exam-screen">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressBar"></div>
+                </div>
+
+                <div class="question-header">
+                    <span class="question-number" id="questionNumber"></span>
+                    <span class="timer" id="timer">30:00</span>
+                </div>
+
+                <div class="question-container">
+                    <div class="question-text" id="questionText"></div>
+                    <div class="options" id="optionsContainer"></div>
+                </div>
+
+                <div class="navigation">
+                    <button class="btn btn-secondary" id="prevBtn">Poprzednie</button>
+                    <button class="btn" id="nextBtn">Następne</button>
+                </div>
+            </div>
+
+            <div class="results-screen">
+                <h2>Wyniki egzaminu</h2>
+
+                <div class="score-display">
+                    <div class="score-text" id="scorePercentage"></div>
+                    <div class="score-label">Wynik końcowy</div>
+                </div>
+
+                <div class="result-message" id="resultMessage"></div>
+
+                <div class="result-details">
+                    <div class="result-row">
+                        <strong>Imię i nazwisko:</strong>
+                        <span id="resultName"></span>
+                    </div>
+                    <div class="result-row">
+                        <strong>Email:</strong>
+                        <span id="resultEmail"></span>
+                    </div>
+                    <div class="result-row">
+                        <strong>Poprawne odpowiedzi:</strong>
+                        <span id="correctAnswers"></span>
+                    </div>
+                    <div class="result-row">
+                        <strong>Niepoprawne odpowiedzi:</strong>
+                        <span id="wrongAnswers"></span>
+                    </div>
+                    <div class="result-row">
+                        <strong>Czas trwania:</strong>
+                        <span id="timeTaken"></span>
+                    </div>
+                </div>
+
+                <div class="print-controls">
+                    <div class="print-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="includeReview" checked>
+                            <span>Dołącz przegląd odpowiedzi do wydruku</span>
+                        </label>
+                    </div>
+                    <button class="btn btn-print" id="printBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" style="margin-right: 8px;">
+                            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                            <rect x="6" y="14" width="12" height="8"></rect>
+                        </svg>
+                        Wydrukuj wyniki
+                    </button>
+                </div>
+
+                <div class="answers-review">
+                    <h3>Przegląd odpowiedzi</h3>
+                    <div id="reviewContainer"></div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-review" id="restartBtn">Rozpocznij nowy egzamin</button>
+                    <button class="btn btn-review btn-review-2" id="showHistoryBtnResults">Obejrzyj poprzednie
+                        egzaminy</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+
+</html>
