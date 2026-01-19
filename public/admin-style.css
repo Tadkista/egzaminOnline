@@ -809,6 +809,18 @@ select#testActive:hover {
         align-items: start;
         gap: 16px;
     }
+    
+    .admin-info {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+        gap: 8px;
+    }
+    
+    .admin-info button {
+        width: 100%;
+        margin-right: 0 !important;
+    }
 
     .admin-nav {
         padding: 0 20px;

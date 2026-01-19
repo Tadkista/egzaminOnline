@@ -19,12 +19,12 @@
                 
                 <div class="form-group">
                     <label for="adminUsername">Nazwa użytkownika:</label>
-                    <input type="text" id="adminUsername" value="admin" placeholder="admin">
+                    <input type="text" id="adminUsername" value="" placeholder="Login">
                 </div>
                 
                 <div class="form-group">
                     <label for="adminPassword">Hasło:</label>
-                    <input type="password" id="adminPassword" value="admin123" placeholder="••••••">
+                    <input type="password" id="adminPassword" value="" placeholder="Hasło">
                 </div>
                 
                 <button class="btn" id="loginBtn">Zaloguj się</button>
@@ -37,6 +37,7 @@
                 <h1>Panel Administracyjny</h1>
                 <div class="admin-info">
                     <span id="adminName"></span>
+                    <button class="btn btn-secondary" onclick="window.location.href='changepass.html'" style="margin-right: 8px;">Zmień hasło</button>
                     <button class="btn btn-secondary" id="logoutBtn">Wyloguj</button>
                 </div>
             </div>

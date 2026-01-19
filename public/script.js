@@ -96,8 +96,17 @@ async function startExam() {
     studentName = document.getElementById('studentName').value.trim();
     studentEmail = document.getElementById('studentEmail').value.trim();
 
+    // 1. Sprawdzenie czy pola nie są puste
     if (!studentName || !studentEmail) {
         alert('Proszę wypełnić wszystkie pola!');
+        return;
+    }
+
+    // 2. Walidacja składni adresu e-mail
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(studentEmail)) {
+        alert('Proszę podać poprawny adres e-mail (np. twoj@email.com)!');
+        document.getElementById('studentEmail').focus();
         return;
     }
 
@@ -152,7 +161,6 @@ async function startExam() {
         alert('Wystąpił błąd podczas rozpoczynania egzaminu. Spróbuj ponownie.');
     }
 }
-
 // Timer
 function startTimer() {
     timerInterval = setInterval(() => {
@@ -339,12 +347,14 @@ function saveExamToHistory(examData) {
 }
 
 // Wyświetlenie wyników
+// Wyświetlenie wyników - zaktualizowana wersja
 function displayResults(examData) {
     document.querySelector('.exam-screen').classList.remove('active');
     document.querySelector('.results-screen').classList.add('active');
 
     const scorePercentage = examData.score;
-    const passed = scorePercentage >= (currentTest?.passing_percentage || 60);
+    const passingThreshold = currentTest?.passing_percentage || examData.passingThreshold || 60;
+    const passed = scorePercentage >= passingThreshold;
 
     document.getElementById('scorePercentage').textContent = scorePercentage.toFixed(0) + '%';
     document.getElementById('resultName').textContent = examData.studentName;
@@ -365,8 +375,73 @@ function displayResults(examData) {
         resultMessage.style.color = '#e74c3c';
     }
 
-    // Wyświetl przegląd odpowiedzi
     displayAnswerReview(examData.detailedResults);
+}
+
+// Wyświetlenie przeglądu odpowiedzi - zaktualizowana wersja
+function displayAnswerReview(detailedResults) {
+    const reviewContainer = document.getElementById('reviewContainer');
+    reviewContainer.innerHTML = '';
+
+    if (!detailedResults || detailedResults.length === 0) {
+        reviewContainer.innerHTML = '<p style="text-align: center; color: #7f8c8d;">Brak danych do wyświetlenia</p>';
+        return;
+    }
+
+    detailedResults.forEach((result, index) => {
+        const reviewDiv = document.createElement('div');
+        reviewDiv.className = 'review-question';
+
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'review-question-header';
+        headerDiv.textContent = `Pytanie ${index + 1}`;
+        reviewDiv.appendChild(headerDiv);
+
+        const textDiv = document.createElement('div');
+        textDiv.className = 'review-question-text';
+        textDiv.textContent = result.questionText;
+        reviewDiv.appendChild(textDiv);
+
+        result.allAnswers.forEach(answer => {
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'review-option';
+
+            let optionText = answer.answer_text;
+
+            if (answer.is_correct) {
+                optionDiv.classList.add('correct');
+                optionText += ' ';
+                const correctLabel = document.createElement('span');
+                correctLabel.className = 'review-label correct-answer';
+                correctLabel.textContent = 'Poprawna';
+                optionDiv.appendChild(document.createTextNode(optionText));
+                optionDiv.appendChild(correctLabel);
+            }
+            else if (result.userAnswerId === answer.id) {
+                optionDiv.classList.add('incorrect');
+                optionDiv.classList.add('user-answer');
+                optionText += ' ';
+                const yourLabel = document.createElement('span');
+                yourLabel.className = 'review-label wrong-answer';
+                yourLabel.textContent = 'Twoja odpowiedź';
+                optionDiv.appendChild(document.createTextNode(optionText));
+                optionDiv.appendChild(yourLabel);
+            } else {
+                optionDiv.textContent = optionText;
+            }
+
+            reviewDiv.appendChild(optionDiv);
+        });
+
+        reviewContainer.appendChild(reviewDiv);
+    });
+}
+
+// Usuń starą funkcję loadHistoryData i zastąp ją tą wersją:
+async function loadHistoryData() {
+    // Historia jest teraz ładowana bezpośrednio z bazy danych w updateHistoryDisplay()
+    // Ta funkcja jest zachowana dla kompatybilności wstecznej
+    return;
 }
 
 // Wyświetlenie przeglądu odpowiedzi
@@ -470,10 +545,7 @@ async function showHistory() {
     }
 
     historyScreen.classList.add('active');
-
-    // Pobierz historię z serwera i localStorage
-    await loadHistoryData();
-    updateHistoryDisplay();
+    await updateHistoryDisplay();
 }
 
 // Utworzenie ekranu historii
@@ -542,13 +614,37 @@ async function loadHistoryData() {
         console.error('Błąd podczas ładowania historii z serwera:', error);
     }
 }
-
-// Aktualizacja wyświetlania historii
-function updateHistoryDisplay() {
+async function updateHistoryDisplay() {
     const container = document.getElementById('historyContainer');
     if (!container) return;
 
-    const history = JSON.parse(localStorage.getItem('examHistory') || '[]');
+    // Pobierz historię z bazy danych
+    let history = [];
+    try {
+        if (studentEmail) {
+            const response = await fetch(`${API_URL}/history/${encodeURIComponent(studentEmail)}`);
+            if (response.ok) {
+                history = await response.json();
+                
+                // Przekształć dane z bazy do formatu używanego przez frontend
+                history = history.map(item => ({
+                    id: item.id,
+                    studentName: item.student_name,
+                    studentEmail: item.student_email,
+                    date: item.completed_at,
+                    score: parseFloat(item.score_percentage) || 0,
+                    correctAnswers: item.correct_answers,
+                    totalQuestions: item.total_questions,
+                    timeTaken: item.time_taken_seconds,
+                    testTitle: item.test_title,
+                    passingThreshold: item.passing_percentage || 60
+                }));
+            }
+        }
+    } catch (error) {
+        console.error('Błąd podczas ładowania historii:', error);
+        showNotification('Nie udało się załadować historii egzaminów', 'error');
+    }
 
     if (history.length === 0) {
         container.innerHTML = '<div class="no-history">Brak zapisanych egzaminów</div>';
@@ -610,8 +706,9 @@ function updateHistoryDisplay() {
             container.appendChild(grid);
         });
     } else if (groupBy === 'result') {
-        const passed = sortedHistory.filter(e => e.score >= 60);
-        const failed = sortedHistory.filter(e => e.score < 60);
+        // Grupuj według wyniku (zdane/niezdane) z uwzględnieniem indywidualnego progu
+        const passed = sortedHistory.filter(e => e.score >= (e.passingThreshold || 60));
+        const failed = sortedHistory.filter(e => e.score < (e.passingThreshold || 60));
 
         if (passed.length > 0) {
             const header = document.createElement('div');
@@ -642,9 +739,9 @@ function updateHistoryDisplay() {
         }
     }
 }
+
 // Utworzenie karty historii
 function createHistoryCard(exam) {
-    console.log(exam); 
     const card = document.createElement('div');
     card.className = 'history-card';
 
@@ -653,7 +750,7 @@ function createHistoryCard(exam) {
     const threshold = exam.passingThreshold !== undefined ? Number(exam.passingThreshold) : 60;
 
     const scoreClass = scoreValue >= 80 ? 'excellent' : 
-    scoreValue >= threshold ? 'passed' : 'failed';
+        scoreValue >= threshold ? 'passed' : 'failed';
 
     card.innerHTML = `
         <div class="history-card-score ${scoreClass}">${scoreValue.toFixed(0)}%</div>
@@ -675,50 +772,96 @@ function createHistoryCard(exam) {
     const deleteBtn = card.querySelector('.btn-delete');
 
     if (viewBtn) {
-        viewBtn.addEventListener('click', (e) => {
+        viewBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
-            viewExamDetails(exam.id);
+            await viewExamDetails(exam.id);
         });
     }
 
     if (deleteBtn) {
-        deleteBtn.addEventListener('click', (e) => {
+        deleteBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
-            deleteExam(exam.id);
+            // Użyj natywnego confirm zamiast showConfirm
+            if (confirm('Czy na pewno chcesz usunąć ten egzamin z historii?')) {
+                await deleteExam(exam.id);
+            }
         });
     }
 
-    card.addEventListener('click', () => viewExamDetails(exam.id));
+    card.addEventListener('click', async () => {
+        await viewExamDetails(exam.id);
+    });
 
     return card;
 }
 
 // Wyświetlenie szczegółów egzaminu z historii
-function viewExamDetails(examId) {
-    const history = JSON.parse(localStorage.getItem('examHistory') || '[]');
-    const exam = history.find(e => e.id == examId);
+async function viewExamDetails(examId) {
+    try {
+        // Pobierz szczegóły egzaminu z bazy danych
+        const response = await fetch(`${API_URL}/history/details/${examId}`);
+        
+        if (!response.ok) {
+            throw new Error('Nie udało się pobrać szczegółów egzaminu');
+        }
 
-    if (!exam) {
-        alert('Nie znaleziono egzaminu');
-        return;
+        const examData = await response.json();
+
+        // Przekształć dane do formatu oczekiwanego przez displayResults
+        const formattedExam = {
+            id: examData.id,
+            studentName: examData.student_name,
+            studentEmail: examData.student_email,
+            date: examData.completed_at,
+            score: parseFloat(examData.score_percentage) || 0,
+            correctAnswers: examData.correct_answers,
+            totalQuestions: examData.total_questions,
+            timeTaken: examData.time_taken_seconds,
+            testTitle: examData.test_title,
+            detailedResults: examData.detailed_results || []
+        };
+
+        currentExamData = formattedExam;
+        viewingHistoricalExam = true;
+
+        document.querySelector('.history-screen').classList.remove('active');
+        displayResults(formattedExam);
+    } catch (error) {
+        console.error('Błąd podczas pobierania szczegółów:', error);
+        showNotification('Nie udało się załadować szczegółów egzaminu', 'error');
     }
-
-    currentExamData = exam;
-    viewingHistoricalExam = true;
-
-    document.querySelector('.history-screen').classList.remove('active');
-    displayResults(exam);
 }
 
 // Usunięcie egzaminu z historii
-function deleteExam(examId) {
-    if (!confirm('Czy na pewno chcesz usunąć ten egzamin?')) return;
+async function deleteExam(examId) {
+    console.log('Próba usunięcia egzaminu, ID:', examId);
+    console.log('URL:', `${API_URL}/history/${examId}`);
+    
+    try {
+        const response = await fetch(`${API_URL}/history/${examId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
 
-    let history = JSON.parse(localStorage.getItem('examHistory') || '[]');
-    history = history.filter(e => e.id !== examId);
-    localStorage.setItem('examHistory', JSON.stringify(history));
+        console.log('Status odpowiedzi:', response.status);
 
-    updateHistoryDisplay();
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: 'Nieznany błąd' }));
+            console.error('Błąd z serwera:', errorData);
+            throw new Error(errorData.error || 'Nie udało się usunąć egzaminu');
+        }
+
+        const data = await response.json();
+        console.log('Odpowiedź serwera:', data);
+
+        showNotification('Egzamin usunięty z historii', 'success', 3000);
+        await updateHistoryDisplay();
+    } catch (error) {
+        console.error('Błąd podczas usuwania egzaminu:', error);
+        showNotification(error.message || 'Nie udało się usunąć egzaminu', 'error');
+    }
 }
 
 // Powrót do ekranu startowego

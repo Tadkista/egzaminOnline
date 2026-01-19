@@ -43,10 +43,16 @@
                     <div class="form-group">
                         <label for="studentEmail">Email:</label>
                         <input type="email" id="studentEmail" placeholder="twoj@email.com" required>
+                        <style>
+                            #studentEmail:invalid:not(:placeholder-shown) {
+                                border-color: #e74c3c;
+                                outline-color: #e74c3c;
+                            }
+                        </style>
                     </div>
                     <button class="btn" id="startExamBtn">Rozpocznij egzamin</button>
-                    <button class="btn btn-secondary" id="showHistoryBtnStart" style="margin-top: 12px;">Obejrzyj
-                        poprzednie egzaminy</button>
+                    <!-- <button class="btn btn-secondary" id="showHistoryBtnStart" style="margin-top: 12px;">Obejrzyj
+                        poprzednie egzaminy</button> -->
                 </div>
             </div>
 
@@ -57,7 +63,7 @@
 
                 <div class="question-header">
                     <span class="question-number" id="questionNumber"></span>
-                    <span class="timer" id="timer">30:00</span>
+                    <span class="timer" id="timer"></span>
                 </div>
 
                 <div class="question-container">

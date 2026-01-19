@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zmiana hasła - Panel Administracyjny</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="admin-style.css">
+    <style>
+        .change-password-container {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+            background: #f5f7fa;
+        }
+
+        .change-password-box {
+            background: white;
+            padding: 48px;
+            border-radius: 2px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .change-password-box h1 {
+            color: #2c3e50;
+            margin-bottom: 12px;
+            font-size: 1.75em;
+            text-align: center;
+        }
+
+        .change-password-box p {
+            color: #7f8c8d;
+            margin-bottom: 32px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #2c3e50;
+            font-size: 0.95em;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #bdc3c7;
+            border-radius: 2px;
+            font-size: 1em;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            font-family: inherit;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .password-requirements {
+            background: #ecf0f1;
+            padding: 16px;
+            border-radius: 2px;
+            margin-bottom: 24px;
+            font-size: 0.9em;
+        }
+
+        .password-requirements h3 {
+            color: #2c3e50;
+            font-size: 0.95em;
+            margin-bottom: 8px;
+        }
+
+        .password-requirements ul {
+            margin: 0;
+            padding-left: 20px;
+            color: #7f8c8d;
+        }
+
+        .password-requirements li {
+            margin-bottom: 4px;
+        }
+
+        .password-strength {
+            margin-top: 8px;
+        }
+
+        .strength-bar {
+            height: 4px;
+            background: #ecf0f1;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .strength-fill {
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s, background 0.3s;
+            background: #e74c3c;
+        }
+
+        .strength-fill.weak {
+            width: 33%;
+            background: #e74c3c;
+        }
+
+        .strength-fill.medium {
+            width: 66%;
+            background: #f39c12;
+        }
+
+        .strength-fill.strong {
+            width: 100%;
+            background: #27ae60;
+        }
+
+        .strength-text {
+            font-size: 0.85em;
+            margin-top: 4px;
+            color: #7f8c8d;
+        }
+
+        .btn-container {
+            display: flex;
+            gap: 12px;
+            margin-top: 32px;
+        }
+
+        .btn-container .btn {
+            flex: 1;
+        }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: 2px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #3498db;
+            text-decoration: none;
+            font-size: 0.95em;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .change-password-box {
+                padding: 32px 24px;
+            }
+            
+            .btn-container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="change-password-container">
+        <div class="change-password-box">
+            <h1>Zmiana hasła</h1>
+            <p>Zmień hasło dostępu do panelu administracyjnego</p>
+
+            <div id="messageBox" class="message"></div>
+
+            <form id="changePasswordForm">
+                <div class="form-group">
+                    <label for="currentPassword">Obecne hasło:</label>
+                    <input type="password" id="currentPassword" placeholder="Wpisz obecne hasło" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="newPassword">Nowe hasło:</label>
+                    <input type="password" id="newPassword" placeholder="Wpisz nowe hasło" required>
+                    <div class="password-strength">
+                        <div class="strength-bar">
+                            <div class="strength-fill" id="strengthFill"></div>
+                        </div>
+                        <div class="strength-text" id="strengthText"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">Potwierdź nowe hasło:</label>
+                    <input type="password" id="confirmPassword" placeholder="Wpisz ponownie nowe hasło" required>
+                </div>
+
+                <div class="password-requirements">
+                    <h3>Wymagania hasła:</h3>
+                    <ul>
+                        <li>Minimum 8 znaków</li>
+                        <li>Przynajmniej jedna wielka litera</li>
+                        <li>Przynajmniej jedna mała litera</li>
+                        <li>Przynajmniej jedna cyfra</li>
+                    </ul>
+                </div>
+
+                <div class="btn-container">
+                    <button type="button" class="btn btn-secondary" onclick="window.location.href='admin.html'">
+                        Anuluj
+                    </button>
+                    <button type="submit" class="btn" id="changePasswordBtn">
+                        Zmień hasło
+                    </button>
+                </div>
+            </form>
+
+            <a href="admin.html" class="back-link">← Powrót do panelu administracyjnego</a>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+
+        // Sprawdź czy admin jest zalogowany
+        const currentAdmin = JSON.parse(localStorage.getItem('currentAdmin') || 'null');
+        if (!currentAdmin) {
+            window.location.href = 'admin.html';
+        }
+
+        // Password strength checker
+        document.getElementById('newPassword').addEventListener('input', function (e) {
+            const password = e.target.value;
+            const strengthFill = document.getElementById('strengthFill');
+            const strengthText = document.getElementById('strengthText');
+
+            if (password.length === 0) {
+                strengthFill.className = 'strength-fill';
+                strengthText.textContent = '';
+                return;
+            }
+
+            let strength = 0;
+            const checks = {
+                length: password.length >= 8,
+                uppercase: /[A-Z]/.test(password),
+                lowercase: /[a-z]/.test(password),
+                number: /[0-9]/.test(password),
+                special: /[^A-Za-z0-9]/.test(password)
+            };
+
+            strength = Object.values(checks).filter(Boolean).length;
+
+            strengthFill.className = 'strength-fill';
+            if (strength <= 2) {
+                strengthFill.classList.add('weak');
+                strengthText.textContent = 'Słabe hasło';
+                strengthText.style.color = '#e74c3c';
+            } else if (strength <= 3) {
+                strengthFill.classList.add('medium');
+                strengthText.textContent = 'Średnie hasło';
+                strengthText.style.color = '#f39c12';
+            } else {
+                strengthFill.classList.add('strong');
+                strengthText.textContent = 'Silne hasło';
+                strengthText.style.color = '#27ae60';
+            }
+        });
+
+        // Handle form submission
+        document.getElementById('changePasswordForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const messageBox = document.getElementById('messageBox');
+
+            // Reset message
+            messageBox.className = 'message';
+            messageBox.textContent = '';
+
+            // Validation
+            if (newPassword !== confirmPassword) {
+                showMessage('Nowe hasła nie są identyczne', 'error');
+                return;
+            }
+
+            if (newPassword.length < 8) {
+                showMessage('Hasło musi mieć minimum 8 znaków', 'error');
+                return;
+            }
+
+            if (!/[A-Z]/.test(newPassword)) {
+                showMessage('Hasło musi zawierać przynajmniej jedną wielką literę', 'error');
+                return;
+            }
+
+            if (!/[a-z]/.test(newPassword)) {
+                showMessage('Hasło musi zawierać przynajmniej jedną małą literę', 'error');
+                return;
+            }
+
+            if (!/[0-9]/.test(newPassword)) {
+                showMessage('Hasło musi zawierać przynajmniej jedną cyfrę', 'error');
+                return;
+            }
+
+            if (currentPassword === newPassword) {
+                showMessage('Nowe hasło musi być inne niż obecne', 'error');
+                return;
+            }
+
+            // Disable button
+            const btn = document.getElementById('changePasswordBtn');
+            btn.disabled = true;
+            btn.textContent = 'Zmieniam hasło...';
+
+            try {
+                const response = await fetch(`${API_URL}/admin/change-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        adminId: currentAdmin.id,
+                        currentPassword: currentPassword,
+                        newPassword: newPassword
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('Hasło zostało zmienione pomyślnie! Za chwilę nastąpi wylogowanie...', 'success');
+                    
+                    // Clear form
+                    document.getElementById('changePasswordForm').reset();
+                    document.getElementById('strengthFill').className = 'strength-fill';
+                    document.getElementById('strengthText').textContent = '';
+
+                    // Logout after 2 seconds
+                    setTimeout(() => {
+                        localStorage.removeItem('currentAdmin');
+                        window.location.href = 'admin.html';
+                    }, 2000);
+                } else {
+                    showMessage(data.error || 'Błąd podczas zmiany hasła', 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Zmień hasło';
+                }
+            } catch (error) {
+                console.error('Błąd:', error);
+                showMessage('Wystąpił błąd podczas łączenia z serwerem', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Zmień hasło';
+            }
+        });
+
+        function showMessage(text, type) {
+            const messageBox = document.getElementById('messageBox');
+            messageBox.textContent = text;
+            messageBox.className = `message ${type} show`;
+            
+            // Auto-hide after 5 seconds for errors
+            if (type === 'error') {
+                setTimeout(() => {
+                    messageBox.className = 'message';
+                }, 5000);
+            }
+        }
+    </script>
+</body>
+
+</html>

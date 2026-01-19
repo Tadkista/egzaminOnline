@@ -760,7 +760,7 @@ async function loadSessions() {
                 <div class="empty-state">
                     <div class="empty-state-icon">📊</div>
                     <h3>Brak sesji egzaminacyjnych</h3>
-                    <p>Sesje pojawią się tutaj gdy ktoś rozpocznie egzamin</p>
+                    <p>Sesje pojawią się tutaj gdy ktoś ukończy egzamin</p>
                 </div>
             `;
             return;
@@ -835,6 +835,7 @@ function renderSessionsTable(sessions) {
                             </td>
                             <td>${minutes}:${seconds}</td>
                             <td>
+                                <button class="btn btn-small" onclick="viewSessionDetails(${session.id})">Szczegóły</button>
                                 <button class="btn btn-small btn-remove" onclick="removesession(${session.id})">Usuń</button>
                             </td>
                         </tr>
@@ -892,4 +893,176 @@ async function filterSessions() {
     } catch (error) {
         console.error('Błąd podczas filtrowania sesji:', error);
     }
+}
+
+// Wyświetlanie szczegółów sesji
+async function viewSessionDetails(sessionId) {
+    try {
+        const response = await fetch(`${API_URL}/admin/sessions/${sessionId}`);
+        const sessionData = await response.json();
+        
+        // Otwórz modal ze szczegółami
+        openSessionDetailsModal(sessionData);
+    } catch (error) {
+        console.error('Błąd podczas ładowania szczegółów sesji:', error);
+        alert('Wystąpił błąd podczas ładowania szczegółów sesji');
+    }
+}
+
+// Otwarcie modala ze szczegółami sesji
+function openSessionDetailsModal(sessionData) {
+    // Utwórz modal jeśli nie istnieje
+    let modal = document.getElementById('sessionDetailsModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'sessionDetailsModal';
+        modal.className = 'modal';
+        document.body.appendChild(modal);
+    }
+    
+    const scorePercentage = Number(sessionData.score_percentage) || 0;
+    const passingThreshold = sessionData.passing_percentage || 60;
+    const passed = scorePercentage >= passingThreshold;
+    
+    const minutes = Math.floor(sessionData.time_taken_seconds / 60);
+    const seconds = (sessionData.time_taken_seconds % 60).toString().padStart(2, '0');
+    
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 1000px;">
+            <div class="modal-header">
+                <h2>Szczegóły sesji egzaminacyjnej</h2>
+                <button class="close-btn" onclick="closeSessionDetailsModal()">×</button>
+            </div>
+            
+            <div class="modal-body" style="max-height: 80vh; overflow-y: auto;">
+                <div class="session-results-screen">
+                    <div class="score-display">
+                        <div class="score-text">${scorePercentage.toFixed(0)}%</div>
+                        <div class="score-label">Wynik końcowy</div>
+                    </div>
+                    
+                    <div class="result-message" style="font-size: 1.25em; margin: 24px 0; text-align: center; font-weight: 500; color: ${passed ? '#27ae60' : '#e74c3c'}">
+                        ${passed ? 'Egzamin zdany!' : 'Egzamin niezdany.'}
+                    </div>
+                    
+                    <div class="result-details">
+                        <div class="result-row">
+                            <strong>Imię i nazwisko:</strong>
+                            <span>${sessionData.student_name}</span>
+                        </div>
+                        <div class="result-row">
+                            <strong>Email:</strong>
+                            <span>${sessionData.student_email}</span>
+                        </div>
+                        <div class="result-row">
+                            <strong>Test:</strong>
+                            <span>${sessionData.test_title}</span>
+                        </div>
+                        <div class="result-row">
+                            <strong>Data zakończenia:</strong>
+                            <span>${new Date(sessionData.completed_at).toLocaleString('pl-PL')}</span>
+                        </div>
+                        <div class="result-row">
+                            <strong>Poprawne odpowiedzi:</strong>
+                            <span>${sessionData.correct_answers} / ${sessionData.total_questions}</span>
+                        </div>
+                        <div class="result-row">
+                            <strong>Niepoprawne odpowiedzi:</strong>
+                            <span>${sessionData.total_questions - sessionData.correct_answers}</span>
+                        </div>
+                        <div class="result-row">
+                            <strong>Czas trwania:</strong>
+                            <span>${minutes}:${seconds}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="answers-review" style="margin-top: 32px;">
+                        <h3>Przegląd odpowiedzi</h3>
+                        <div id="sessionReviewContainer"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeSessionDetailsModal()">Zamknij</button>
+            </div>
+        </div>
+    `;
+    
+    modal.classList.add('active');
+    
+    // Renderuj szczegółowe odpowiedzi
+    renderSessionAnswerReview(sessionData.detailed_results);
+}
+
+// Zamknięcie modala szczegółów sesji
+function closeSessionDetailsModal() {
+    const modal = document.getElementById('sessionDetailsModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+// Wyświetlenie przeglądu odpowiedzi dla sesji (3 osoba)
+function renderSessionAnswerReview(detailedResults) {
+    const reviewContainer = document.getElementById('sessionReviewContainer');
+    if (!reviewContainer) return;
+    
+    reviewContainer.innerHTML = '';
+    
+    if (!detailedResults || detailedResults.length === 0) {
+        reviewContainer.innerHTML = '<p style="text-align: center; color: #7f8c8d;">Brak danych do wyświetlenia</p>';
+        return;
+    }
+    
+    detailedResults.forEach((result, index) => {
+        const reviewDiv = document.createElement('div');
+        reviewDiv.className = 'review-question';
+        
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'review-question-header';
+        headerDiv.textContent = `Pytanie ${index + 1}`;
+        reviewDiv.appendChild(headerDiv);
+        
+        const textDiv = document.createElement('div');
+        textDiv.className = 'review-question-text';
+        textDiv.textContent = result.questionText;
+        reviewDiv.appendChild(textDiv);
+        
+        // Wyświetl wszystkie odpowiedzi
+        result.allAnswers.forEach(answer => {
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'review-option';
+            
+            let optionText = answer.answer_text;
+            
+            // Oznacz poprawną odpowiedź
+            if (answer.is_correct) {
+                optionDiv.classList.add('correct');
+                optionText += ' ';
+                const correctLabel = document.createElement('span');
+                correctLabel.className = 'review-label correct-answer';
+                correctLabel.textContent = 'Poprawna';
+                optionDiv.appendChild(document.createTextNode(optionText));
+                optionDiv.appendChild(correctLabel);
+            }
+            // Oznacz odpowiedź uczestnika (jeśli niepoprawna)
+            else if (result.userAnswerId === answer.id) {
+                optionDiv.classList.add('incorrect');
+                optionDiv.classList.add('user-answer');
+                optionText += ' ';
+                const yourLabel = document.createElement('span');
+                yourLabel.className = 'review-label wrong-answer';
+                yourLabel.textContent = 'Odpowiedź uczestnika';
+                optionDiv.appendChild(document.createTextNode(optionText));
+                optionDiv.appendChild(yourLabel);
+            } else {
+                optionDiv.textContent = optionText;
+            }
+            
+            reviewDiv.appendChild(optionDiv);
+        });
+        
+        reviewContainer.appendChild(reviewDiv);
+    });
 }
